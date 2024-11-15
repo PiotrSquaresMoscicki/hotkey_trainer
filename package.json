@@ -1,0 +1,21 @@
+{
+    "name": "hotkey_trainer",
+    "version": "1.0.0",
+    "description": "Customizable trainer website for practicing using hotkeys and hotkey sequences by showing the action name to perform and waiting for the proper sequence to follow",
+    "scripts": {
+      "dev": "vite",
+      "test": "jest",
+      "build": "tsc && vite build"
+    },
+    "dependencies": {
+      "vite": "^2.0.0",
+      "typescript": "^4.0.0",
+      "jest": "^26.0.0",
+      "ts-jest": "^26.0.0"
+    },
+    "devDependencies": {
+      "@types/jest": "^26.0.0",
+      "@vitejs/plugin-react": "^1.0.0"
+    }
+  }
+  
