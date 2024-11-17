@@ -7,8 +7,16 @@
 	},
 	"customizations": {
 		"vscode": {
+			// copilot, typescript, live server, docker, yaml, json, markdown, npm
 			"extensions": [
-				"ritwickdey.LiveServer"
+				"ritwickdey.LiveServer",
+				"ms-toolsai.copilot",
+				"ms-vscode.vscode-typescript-next",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml",
+				"esbenp.prettier-vscode",
+				"yzhang.markdown-all-in-one",
+				"christian-kohler.npm-intellisense"
 			]
 		}
 	},
