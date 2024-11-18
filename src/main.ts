@@ -84,7 +84,13 @@ class Model {
     }
 
     getScore(): number {
-        return this.getSuccessRate() * (this.getAverageReactionTime()/600) * 100;
+        // ideal apm is 300 which is 5 actions per second which is 200ms of reaction time
+        // ideal success rate is 1
+        // ideal score is 100
+        const successRate = this.getSuccessRate();
+        const averageReactionTime = this.getAverageReactionTime();
+        const score = (successRate + (0.2 / averageReactionTime)) * 50;
+        return score;
     }
 
     // returns the next required operation or null if there are no more operations
