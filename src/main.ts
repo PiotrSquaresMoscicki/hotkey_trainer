@@ -13,7 +13,7 @@
 // - Failed Operation - when at least one action is not correct in the sequence the whole sequence
 //      is failed and the user needs to start from the beginning
 
-class Action {
+export class Action {
     name: string;
     key: string;
     ctrl: boolean;
