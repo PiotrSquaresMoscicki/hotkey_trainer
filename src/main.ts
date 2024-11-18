@@ -260,9 +260,10 @@ class View implements ModelObserver {
         const successfulOperations = this.model.numberOfSuccessfulOperations;
         const failedOperations = this.model.numberOfFailedOperations;
 
-        this.context.fillText('Success rate: ' + successRate, this.canvas.width * 2 / 3, 10);
-        this.context.fillText('Average reaction time: ' + averageReactionTime, this.canvas.width * 2 / 3, 50);
-        this.context.fillText('Score: ' + score, this.canvas.width * 2 / 3, 90);
+        // limit number of digits to two after the decimal point
+        this.context.fillText('Success rate: ' + successRate.toFixed(2), this.canvas.width * 2 / 3, 10);
+        this.context.fillText('Average reaction time: ' + averageReactionTime.toFixed(2), this.canvas.width * 2 / 3, 50);
+        this.context.fillText('Score: ' + score.toFixed(2), this.canvas.width * 2 / 3, 90);
         this.context.fillText('Successful operations: ' + successfulOperations, this.canvas.width * 2 / 3, 130);
         this.context.fillText('Failed operations: ' + failedOperations, this.canvas.width * 2 / 3, 170);
     }
@@ -335,11 +336,11 @@ const createCameraLocation2 = new Action('Create Camera Location 2', 'Digit9', t
 const createCameraLocation3 = new Action('Create Camera Location 3', 'Digit8', true, false, true);
 const createCameraLocation4 = new Action('Create Camera Location 4', 'KeyU', true, false, true);
 
-const addtoInjectQueens = new Action('Add to Inject Queens', 'KeyI', true, false, true);
-const addtoHatcheries = new Action('Add to Hatcheries', 'KeyO', true, false, true);
-const addtoHarrasArmy = new Action('Add to Harras Army', 'KeyJ', true, false, true);
-const addtoMainArmy = new Action('Add to Main Army', 'KeyL', true, false, true);
-const addtoCreepQueens = new Action('Add to Creep Queens', 'KeyH', true, false, true);
+const addtoInjectQueens = new Action('Add to Inject Queens', 'KeyI', true, false, false);
+const addtoHatcheries = new Action('Add to Hatcheries', 'KeyO', true, false, false);
+const addtoHarrasArmy = new Action('Add to Harras Army', 'KeyJ', true, false, false);
+const addtoMainArmy = new Action('Add to Main Army', 'KeyL', true, false, false);
+const addtoCreepQueens = new Action('Add to Creep Queens', 'KeyH', true, false, false);
 
 // operations
 

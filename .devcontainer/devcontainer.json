@@ -7,7 +7,7 @@
 	},
 	"customizations": {
 		"vscode": {
-			// copilot, typescript, live server, docker, yaml, json, markdown, npm
+			// copilot, typescript, live server, docker, yaml, json, markdown, npm, github actions
 			"extensions": [
 				"ritwickdey.LiveServer",
 				"ms-toolsai.copilot",
@@ -16,7 +16,8 @@
 				"redhat.vscode-yaml",
 				"esbenp.prettier-vscode",
 				"yzhang.markdown-all-in-one",
-				"christian-kohler.npm-intellisense"
+				"christian-kohler.npm-intellisense",
+				"github.vscode-pull-request-github",
 			]
 		}
 	},
