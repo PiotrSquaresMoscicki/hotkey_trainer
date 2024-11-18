@@ -1,81 +1,14 @@
 <!DOCTYPE html>
-<html>
-<head>
-<title>Website Title</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style type="text/css">
-* {margin: 0; padding: 0;}
-html, body {
-  height: 100%;
-}
-#container {
-  height: 100%;
-  width: 100%;
-  font-size: 0;
-  display: flex;
-}
-#operations, #actions, #right {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 40px;
-  height: 100%;
-}
-#operations, #actions {
-  flex-direction: column;
-}
-#operations {
-  width: 40%;
-  background: white;
-  border-right: 1px solid black;
-}
-#actions {
-  width: 40%;
-  background: white;
-  border-right: 1px solid black;
-}
-#right {
-  width: 20%;
-  background: white;
-}
-#operationsTop, #actionsTop, #operationsBottom, #actionsBottom {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  flex-grow: 1;
-}
-#operationsTop, #actionsTop {
-  background: lightgray;
-  align-items: flex-end;
-}
-#operationsMiddle, #actionsMiddle {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50px;
-  width: 100%;
-  background: gray;
-}
-#operationsBottom, #actionsBottom {
-  background: darkgray;
-  align-items: top;
-}
-</style>
-<script type="module" src="/src/main.ts"></script>
-</head>
-<body>
-<div id="container">
-    <div id="operations">
-        <div id="operationsTop">Operations Top</div>
-        <div id="operationsMiddle">Operations Middle</div>
-        <div id="operationsBottom">-</div>
-    </div>
-    <div id="actions">
-        <div id="actionsTop">-</div>
-        <div id="actionsMiddle">Actions Middle</div>
-        <div id="actionsBottom">Actions Bottom</div>
-    </div>
-    <div id="right">Right Side Menu</div>
-</div>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hotkey Trainer</title>
+    <link rel="stylesheet" href="/src/css/style.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+  </body>
 </html>
