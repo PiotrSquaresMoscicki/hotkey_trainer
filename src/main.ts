@@ -52,14 +52,6 @@ class Operation {
     }
 }
 
-class OperationsSet {
-    operations: Operation[];
-
-    constructor(operations: Operation[]) {
-        this.operations = operations;
-    }
-}
-
 interface ModelObserver {
     onOperationSuccess(): void
     opOperationFailure(): void
@@ -69,82 +61,101 @@ interface ModelObserver {
 
 class Model {
     // set of operations from which the user is supposed to learn
-    operationsSet: OperationsSet;
+    operationsSet: Operation[] = [];
 
     // index of the next required action in the current operation
-    nextRequiredActionIndex: number;
-    // currently displayed operation
-    nextRequiredOperation: Operation;
+    nextRequiredActionIndex: number = 0;
 
+    // actions performed in the current operation
+    actionsPerformed: Action[] = [];
+
+    // observer that is notified about the model state changes
     observer: ModelObserver;
+    
 
-    getNextRequiredOperation(): Operation {
-        return this.nextRequiredOperation;
+    // returns the next required operation or null if there are no more operations
+    getNextRequiredOperation(): Operation | null {
+        if (this.operationsSet.length === 0) {
+            return null;
+        }
+
+        return this.operationsSet[0];
     }
 
-    getNextRequiredAction(): Action {
-        return this.nextRequiredOperation.actions[this.nextRequiredActionIndex];
+    // selects the next required action or null if there are no more operations
+    getNextRequiredAction(): Action | null {
+        const requiredOperation = this.getNextRequiredOperation();
+        if (requiredOperation === null) {
+            return null;
+        }
+
+        return requiredOperation.actions[this.nextRequiredActionIndex];
     }
 
     registerAction(action: Action): boolean {
+        const requiredOperation = this.getNextRequiredOperation();
         const requiredAction = this.getNextRequiredAction();
+        if (requiredAction === null || requiredOperation === null) {
+            return false;
+        }
+
         if (requiredAction.equal(action)) {
             this.nextRequiredActionIndex++;
             this.observer.onActionSuccess();
-            if (this.nextRequiredActionIndex === this.nextRequiredOperation.actions.length) {
-                this.selectNextOperation();
+            if (this.nextRequiredActionIndex === requiredOperation.actions.length) {
                 this.observer.onOperationSuccess();
+                this.nextRequiredActionIndex = 0;
+                this.actionsPerformed = [];
+                this.operationsSet.shift();
             }
-            return true;
         } else {
-            this.resetNextOperationProgress();
             this.observer.onActionFailure();
-            return false;
+            this.nextRequiredActionIndex = 0;
+            this.actionsPerformed = [];
+        }
+
+        return true;
+    }
+
+    generateOperationsSet(allowedOperations: Operation[], numberOfOperations: number): void {
+        this.operationsSet = [];
+        for (let i = 0; i < numberOfOperations; i++) {
+            const randomIndex = Math.floor(Math.random() * allowedOperations.length);
+            this.operationsSet.push(allowedOperations[randomIndex]);
         }
     }
 
-    selectNextOperation(): void {
-        this.nextRequiredOperation = this.operationsSet.operations[Math.floor(Math.random() * this.operationsSet.operations.length)];
-        this.nextRequiredActionIndex = 0;
-    }
-
-    resetNextOperationProgress(): void {
-        this.nextRequiredActionIndex = 0;
-    }
-
-    constructor(operationsSet: OperationsSet, observer: ModelObserver) {
-        this.operationsSet = operationsSet;
-        this.nextRequiredActionIndex = 0;
-        this.nextRequiredOperation = this.operationsSet.operations[this.nextRequiredActionIndex];
+    constructor(observer: ModelObserver) {
         this.observer = observer;
-        this.selectNextOperation();
     }
 }
 
-function displayPressedKeys(event: KeyboardEvent): void {
-    const displayElement = document.getElementById('middle');
-    if (displayElement) {
-        const keys = [];
-        if (event.ctrlKey) keys.push('Ctrl');
-        if (event.shiftKey) keys.push('Shift');
-        if (event.altKey) keys.push('Alt');
-        if (event.metaKey) keys.push('Meta');
-        keys.push(event.key);
-        displayElement.innerHTML = keys.join(' + ');
+class View {
+    pressedKeys: string[] = [];
+
+    onKeyDown(event: KeyboardEvent): void {
+        this.pressedKeys.push(event.key);
+        this.update();
+        event.preventDefault();
     }
 
-    // mark all events as handled
-    event.preventDefault();
-}
+    onKeyUp(event: KeyboardEvent): void {
+        this.pressedKeys = [];
+        this.update();
+        event.preventDefault();
+    }
 
-function clearDisplay(): void {
-    const displayElement = document.getElementById('middle');
-    if (displayElement) {
-        displayElement.innerHTML = '';
+    update(): void {
+        const displayElement = document.getElementById('actionsMiddle');
+        if (displayElement) {
+            displayElement.innerHTML = this.pressedKeys.join(' + ');
+        }
+    }
+
+    constructor() {
+        document.addEventListener('keydown', this.onKeyDown.bind(this));
+        document.addEventListener('keyup', this.onKeyUp.bind(this));
     }
 }
 
-document.addEventListener('keydown', displayPressedKeys);
-document.addEventListener('keyup', clearDisplay);
-
-// 
+const view = new View();

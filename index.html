@@ -14,23 +14,67 @@ html, body {
   font-size: 0;
   display: flex;
 }
-#left, #middle, #right {
+#operations, #actions, #right {
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 40px;
   height: 100%;
 }
-#left {width: 25%; background: blue;}
-#middle {width: 50%; background: green;}
-#right {width: 25%; background: yellow;}
+#operations, #actions {
+  flex-direction: column;
+}
+#operations {
+  width: 40%;
+  background: white;
+  border-right: 1px solid black;
+}
+#actions {
+  width: 40%;
+  background: white;
+  border-right: 1px solid black;
+}
+#right {
+  width: 20%;
+  background: white;
+}
+#operationsTop, #actionsTop, #operationsBottom, #actionsBottom {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  flex-grow: 1;
+}
+#operationsTop, #actionsTop {
+  background: lightgray;
+  align-items: flex-end;
+}
+#operationsMiddle, #actionsMiddle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+  background: gray;
+}
+#operationsBottom, #actionsBottom {
+  background: darkgray;
+  align-items: top;
+}
 </style>
 <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
 <div id="container">
-    <div id="left">Left Side Menu</div>
-    <div id="middle">Random Content</div>
+    <div id="operations">
+        <div id="operationsTop">Operations Top</div>
+        <div id="operationsMiddle">Operations Middle</div>
+        <div id="operationsBottom">-</div>
+    </div>
+    <div id="actions">
+        <div id="actionsTop">-</div>
+        <div id="actionsMiddle">Actions Middle</div>
+        <div id="actionsBottom">Actions Bottom</div>
+    </div>
     <div id="right">Right Side Menu</div>
 </div>
 </body>
