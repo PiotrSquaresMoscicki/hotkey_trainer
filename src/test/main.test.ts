@@ -1,3 +1,5 @@
+export {};
+
 describe('Key press and release handling', () => {
     let displayElement: HTMLElement | null;
 
