@@ -58,12 +58,32 @@ class Model {
     // index of the next required action in the current operation
     nextRequiredActionIndex: number = 0;
 
-    // actions performed in the current operation
-    actionsPerformed: Action[] = [];
-
     // observer that is notified about the model state changes
     observer: ModelObserver;
+
+    lastActionTime: number = 0;
+
+    // stats
+    numberOfSuccessfulOperations: number = 0;
+    numberOfFailedOperations: number = 0;
+    reactionTimes: number[] = [];
     
+    getSuccessRate(): number {
+        return this.numberOfSuccessfulOperations / (this.numberOfSuccessfulOperations + this.numberOfFailedOperations);
+    }
+
+    getAverageReactionTime(): number {
+        if (this.reactionTimes.length === 0) {
+            return 0;
+        }
+
+        // as seconds
+        return this.reactionTimes.reduce((a, b) => a + b, 0) / this.reactionTimes.length / 1000;
+    }
+
+    getScore(): number {
+        return this.getSuccessRate() * (this.getAverageReactionTime()/600) * 100;
+    }
 
     // returns the next required operation or null if there are no more operations
     getNextRequiredOperation(): Operation | null {
@@ -114,17 +134,19 @@ class Model {
             this.observer.onActionSuccess();
             if (this.nextRequiredActionIndex === requiredOperation.actions.length) {
                 this.observer.onOperationSuccess();
+                this.numberOfSuccessfulOperations++;
                 this.nextRequiredActionIndex = 0;
-                this.actionsPerformed = [];
                 this.operationsSet.shift();
+                this.reactionTimes.push(Date.now() - this.lastActionTime);
+                this.lastActionTime = Date.now();
             }
+            return true;
         } else {
             this.observer.onActionFailure();
+            this.numberOfFailedOperations++;
             this.nextRequiredActionIndex = 0;
-            this.actionsPerformed = [];
+            return false;
         }
-
-        return true;
     }
 
     generateOperationsSet(allowedOperations: Operation[], numberOfOperations: number): void {
@@ -137,6 +159,7 @@ class Model {
 
     constructor(observer: ModelObserver) {
         this.observer = observer;
+        this.lastActionTime = Date.now();
     }
 }
 
@@ -172,6 +195,7 @@ class View implements ModelObserver {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.drawCurrentAction();
         this.drawExpectedOperations();
+        this.drawStatistics();
     }
 
     drawExpectedOperations(): void {
@@ -214,6 +238,33 @@ class View implements ModelObserver {
         this.context.strokeStyle = 'black';
         this.context.lineWidth = 3;
         this.context.strokeRect(this.canvas.width / 3, this.canvas.height / 2 - 20, this.canvas.width / 3, 40);
+    }
+
+    drawStatistics(): void {
+        // draw statistics on the right side of the canvas
+        // statistics should contain the following information:
+        // - success rate
+        // - average reaction time
+        // - score
+        // - number of successful operations
+        // - number of failed operations
+
+        this.context.fillStyle = 'black';
+        this.context.font = '30px Arial';
+        this.context.textAlign = 'left';
+        this.context.textBaseline = 'top';
+
+        const successRate = this.model.getSuccessRate();
+        const averageReactionTime = this.model.getAverageReactionTime();
+        const score = this.model.getScore();
+        const successfulOperations = this.model.numberOfSuccessfulOperations;
+        const failedOperations = this.model.numberOfFailedOperations;
+
+        this.context.fillText('Success rate: ' + successRate, this.canvas.width * 2 / 3, 10);
+        this.context.fillText('Average reaction time: ' + averageReactionTime, this.canvas.width * 2 / 3, 50);
+        this.context.fillText('Score: ' + score, this.canvas.width * 2 / 3, 90);
+        this.context.fillText('Successful operations: ' + successfulOperations, this.canvas.width * 2 / 3, 130);
+        this.context.fillText('Failed operations: ' + failedOperations, this.canvas.width * 2 / 3, 170);
     }
 
     generateOperationsSet(allowedOperations: Operation[], numberOfOperations: number): void {
