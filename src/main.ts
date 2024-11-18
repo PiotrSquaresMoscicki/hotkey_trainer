@@ -193,6 +193,12 @@ class View implements ModelObserver {
         event.preventDefault();
     }
 
+    onWindowResize(): void {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.update();
+    }
+
     update(): void {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.drawCurrentAction();
@@ -311,6 +317,7 @@ class View implements ModelObserver {
         
         document.addEventListener('keydown', this.onKeyDown.bind(this));
         document.addEventListener('keyup', this.onKeyUp.bind(this));
+        window.addEventListener('resize', this.onWindowResize.bind(this));
 
         this.update();
     }
