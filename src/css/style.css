@@ -5,10 +5,73 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     overflow: hidden;
+    position: relative;
 }
 
 #canvas {
     display: block;
     border: 1px solid #ccc;
     background-color: white;
+}
+
+/* Hint button styling */
+.hint-button {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.hint-button:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.hint-button:active {
+    transform: translateX(-50%) translateY(0px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Hint display styling */
+.hint-display {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    transition: all 0.3s ease;
+    max-width: 400px;
+    word-wrap: break-word;
+}
+
+.hint-display.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.hint-display.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0px);
 }

@@ -1585,24 +1585,35 @@ class View implements ModelObserver {
         // notify the user that the operation was successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
     }
 
     opOperationFailure(): void {
         // notify the user that the operation was not successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
     }
 
     onActionSuccess(): void {
         // notify the user that the action was successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
     }
 
     onActionFailure(): void {
         // notify the user that the action was not successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
+    }
+
+    refreshHintIfShown(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (hintDisplay && !hintDisplay.classList.contains('hidden')) {
+            this.showHint();
+        }
     }
 
     constructor() {
@@ -1619,7 +1630,86 @@ class View implements ModelObserver {
         document.addEventListener('keyup', this.onKeyUp.bind(this));
         window.addEventListener('resize', this.onWindowResize.bind(this));
 
+        // Setup hint button functionality
+        this.setupHintButton();
+
         this.update();
+    }
+
+    setupHintButton(): void {
+        const hintButton = document.getElementById('hint-button') as HTMLButtonElement;
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        
+        if (hintButton && hintDisplay) {
+            hintButton.addEventListener('click', () => {
+                this.toggleHintDisplay();
+            });
+        }
+    }
+
+    toggleHintDisplay(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        const hintButton = document.getElementById('hint-button') as HTMLButtonElement;
+        if (!hintDisplay || !hintButton) return;
+
+        if (hintDisplay.classList.contains('hidden')) {
+            this.showHint();
+            hintButton.textContent = 'Hide Hint';
+        } else {
+            this.hideHint();
+            hintButton.textContent = 'Show Hotkey Hint';
+        }
+    }
+
+    showHint(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (!hintDisplay) return;
+
+        const currentAction = this.model.getNextRequiredAction();
+        if (currentAction) {
+            const hotkey = this.formatHotkey(currentAction);
+            hintDisplay.textContent = `Next hotkey: ${hotkey}`;
+            hintDisplay.classList.remove('hidden');
+            hintDisplay.classList.add('show');
+        } else {
+            hintDisplay.textContent = 'No action required at the moment';
+            hintDisplay.classList.remove('hidden');
+            hintDisplay.classList.add('show');
+        }
+    }
+
+    hideHint(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (!hintDisplay) return;
+
+        hintDisplay.classList.remove('show');
+        hintDisplay.classList.add('hidden');
+    }
+
+    formatHotkey(action: Action): string {
+        let hotkey = '';
+        
+        if (action.ctrl) hotkey += 'Ctrl + ';
+        if (action.shift) hotkey += 'Shift + ';
+        if (action.alt) hotkey += 'Alt + ';
+        
+        // Convert the key code to a more readable format
+        const keyMap: { [key: string]: string } = {
+            'KeyA': 'A', 'KeyB': 'B', 'KeyC': 'C', 'KeyD': 'D', 'KeyE': 'E', 'KeyF': 'F',
+            'KeyG': 'G', 'KeyH': 'H', 'KeyI': 'I', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L',
+            'KeyM': 'M', 'KeyN': 'N', 'KeyO': 'O', 'KeyP': 'P', 'KeyQ': 'Q', 'KeyR': 'R',
+            'KeyS': 'S', 'KeyT': 'T', 'KeyU': 'U', 'KeyV': 'V', 'KeyW': 'W', 'KeyX': 'X',
+            'KeyY': 'Y', 'KeyZ': 'Z',
+            'Digit0': '0', 'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4',
+            'Digit5': '5', 'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9',
+            'Semicolon': ';', 'Quote': "'", 'Backslash': '\\', 'Slash': '/', 
+            'Period': '.', 'Comma': ',', 'Minus': '-', 'Equal': '=',
+            'BracketLeft': '[', 'BracketRight': ']', 'Backspace': 'Backspace'
+        };
+        
+        hotkey += keyMap[action.key] || action.key;
+        
+        return hotkey;
     }
 }
 
