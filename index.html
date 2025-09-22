@@ -9,7 +9,33 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <canvas id="canvas"></canvas>
+    <div id="app" class="app-container">
+      <!-- Operations list section -->
+      <div id="operations-section" class="operations-section">
+        <h3>Operations to perform:</h3>
+        <div id="operations-list" class="operations-list"></div>
+      </div>
+      
+      <!-- Current action section -->
+      <div id="current-action-section" class="current-action-section">
+        <h3>Current keys:</h3>
+        <div id="pressed-keys" class="pressed-keys">Press keys...</div>
+      </div>
+      
+      <!-- Statistics section -->
+      <div id="statistics-section" class="statistics-section">
+        <h3>Statistics:</h3>
+        <div id="statistics" class="statistics">
+          <div class="stat-item">Success rate: <span id="success-rate">0.00</span></div>
+          <div class="stat-item">Avg reaction time: <span id="avg-time">0.00</span></div>
+          <div class="stat-item">Score: <span id="score">0.00</span></div>
+          <div class="stat-item">Successful: <span id="successful-ops">0</span></div>
+          <div class="stat-item">Failed: <span id="failed-ops">0</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Hint button and display -->
     <button id="hint-button" class="hint-button">Show Hotkey Hint</button>
     <div id="hint-display" class="hint-display hidden"></div>
   </body>
