@@ -1461,11 +1461,18 @@ class Model {
 }
 
 class View implements ModelObserver {
-    canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
+    // HTML elements instead of canvas
+    operationsListElement: HTMLElement;
+    pressedKeysElement: HTMLElement;
+    statisticsElements: {
+        successRate: HTMLElement;
+        avgTime: HTMLElement;
+        score: HTMLElement;
+        successfulOps: HTMLElement;
+        failedOps: HTMLElement;
+    };
 
     pressedKeys: string[] = [];
-
     model: Model;
 
     onKeyDown(event: KeyboardEvent): void {
@@ -1494,86 +1501,58 @@ class View implements ModelObserver {
     }
 
     onWindowResize(): void {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // No longer need to resize canvas
         this.update();
     }
 
     update(): void {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.drawCurrentAction();
-        this.drawExpectedOperations();
-        this.drawStatistics();
+        this.updateCurrentAction();
+        this.updateExpectedOperations();
+        this.updateStatistics();
     }
 
-    drawExpectedOperations(): void {
-        // list of operations to execute should be displayed on the left side of the canvas going 
-        // from the top to the middle of the canvas
-        // each operation should be displayed in a separate line
-        // first operation from the list should be displayed in the middle, the next one one line 
-        // above and so on until we run out of space
-
-        this.context.fillStyle = 'black';
-        this.context.font = '30px Arial';
-        this.context.textAlign = 'left';
-        this.context.textBaseline = 'middle';
-
+    updateExpectedOperations(): void {
         const operations = this.model.operationsSet;
-        const operationsCount = operations.length;
-        const lineHeight = 40;
-        const startY = this.canvas.height / 2;
-        const maxLines = Math.floor(startY / lineHeight);
+        this.operationsListElement.innerHTML = '';
         
-        for (let i = 0; i < operationsCount && i < maxLines; i++) {
-            this.context.fillText(operations[i].name, 10, startY - i * lineHeight);
+        const maxOperations = Math.min(operations.length, 15); // Limit for smaller window
+        
+        for (let i = 0; i < maxOperations; i++) {
+            const operationDiv = document.createElement('div');
+            operationDiv.className = 'operation-item';
+            operationDiv.textContent = operations[i].name;
+            
+            // Highlight current operation
+            if (i === 0) {
+                operationDiv.classList.add('current');
+            }
+            
+            this.operationsListElement.appendChild(operationDiv);
         }
-
-        // draw a frame around the first operation (from left side of the canvas to the 1/3 of the width)
-        this.context.strokeStyle = 'black';
-        this.context.lineWidth = 3;
-        this.context.strokeRect(0, startY - lineHeight / 2, this.canvas.width / 3, lineHeight);
     }
 
-    drawCurrentAction(): void {
-        // draw pressed keys in the middle of the canvas
-        this.context.fillStyle = 'black';
-        this.context.font = '30px Arial';
-        this.context.textAlign = 'center';
-        this.context.textBaseline = 'middle';
-        this.context.fillText(this.pressedKeys.join(' + '), this.canvas.width / 2, this.canvas.height / 2);
-
-        // draw a frame around the pressed keys (from 1/3 of the width to 2/3 of the width)
-        this.context.strokeStyle = 'black';
-        this.context.lineWidth = 3;
-        this.context.strokeRect(this.canvas.width / 3, this.canvas.height / 2 - 20, this.canvas.width / 3, 40);
+    updateCurrentAction(): void {
+        if (this.pressedKeys.length > 0) {
+            this.pressedKeysElement.textContent = this.pressedKeys.join(' + ');
+            this.pressedKeysElement.classList.add('active');
+        } else {
+            this.pressedKeysElement.textContent = 'Press keys...';
+            this.pressedKeysElement.classList.remove('active');
+        }
     }
 
-    drawStatistics(): void {
-        // draw statistics on the right side of the canvas
-        // statistics should contain the following information:
-        // - success rate
-        // - average reaction time
-        // - score
-        // - number of successful operations
-        // - number of failed operations
-
-        this.context.fillStyle = 'black';
-        this.context.font = '30px Arial';
-        this.context.textAlign = 'left';
-        this.context.textBaseline = 'top';
-
+    updateStatistics(): void {
         const successRate = this.model.getSuccessRate();
         const averageReactionTime = this.model.getAverageReactionTime();
         const score = this.model.getScore();
         const successfulOperations = this.model.numberOfSuccessfulOperations;
         const failedOperations = this.model.numberOfFailedOperations;
 
-        // limit number of digits to two after the decimal point
-        this.context.fillText('Success rate: ' + successRate.toFixed(2), this.canvas.width * 2 / 3, 10);
-        this.context.fillText('Average reaction time: ' + averageReactionTime.toFixed(2), this.canvas.width * 2 / 3, 50);
-        this.context.fillText('Score: ' + score.toFixed(2), this.canvas.width * 2 / 3, 90);
-        this.context.fillText('Successful operations: ' + successfulOperations, this.canvas.width * 2 / 3, 130);
-        this.context.fillText('Failed operations: ' + failedOperations, this.canvas.width * 2 / 3, 170);
+        this.statisticsElements.successRate.textContent = successRate.toFixed(2);
+        this.statisticsElements.avgTime.textContent = averageReactionTime.toFixed(2);
+        this.statisticsElements.score.textContent = score.toFixed(2);
+        this.statisticsElements.successfulOps.textContent = successfulOperations.toString();
+        this.statisticsElements.failedOps.textContent = failedOperations.toString();
     }
 
     generateOperationsSet(allowedOperations: Operation[], numberOfOperations: number): void {
@@ -1585,33 +1564,62 @@ class View implements ModelObserver {
         // notify the user that the operation was successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
+        this.animateOperationComplete();
     }
 
     opOperationFailure(): void {
         // notify the user that the operation was not successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
     }
 
     onActionSuccess(): void {
         // notify the user that the action was successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
     }
 
     onActionFailure(): void {
         // notify the user that the action was not successful
         // play a sound
         // update the statistics
+        this.refreshHintIfShown();
+    }
+
+    animateOperationComplete(): void {
+        // Add a brief animation when an operation is completed
+        const currentOperation = this.operationsListElement.querySelector('.operation-item.current');
+        if (currentOperation) {
+            currentOperation.classList.add('completed');
+            setTimeout(() => {
+                this.update(); // This will refresh the list
+            }, 500);
+        }
+    }
+
+    refreshHintIfShown(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (hintDisplay && !hintDisplay.classList.contains('hidden')) {
+            this.showHint();
+        }
     }
 
     constructor() {
-        this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-        this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-
-        // set canvas size to the window size
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Get HTML elements instead of canvas
+        this.operationsListElement = document.getElementById('operations-list') as HTMLElement;
+        this.pressedKeysElement = document.getElementById('pressed-keys') as HTMLElement;
+        
+        // Get statistics elements
+        this.statisticsElements = {
+            successRate: document.getElementById('success-rate') as HTMLElement,
+            avgTime: document.getElementById('avg-time') as HTMLElement,
+            score: document.getElementById('score') as HTMLElement,
+            successfulOps: document.getElementById('successful-ops') as HTMLElement,
+            failedOps: document.getElementById('failed-ops') as HTMLElement,
+        };
 
         this.model = new Model(this);
         
@@ -1619,7 +1627,86 @@ class View implements ModelObserver {
         document.addEventListener('keyup', this.onKeyUp.bind(this));
         window.addEventListener('resize', this.onWindowResize.bind(this));
 
+        // Setup hint button functionality
+        this.setupHintButton();
+
         this.update();
+    }
+
+    setupHintButton(): void {
+        const hintButton = document.getElementById('hint-button') as HTMLButtonElement;
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        
+        if (hintButton && hintDisplay) {
+            hintButton.addEventListener('click', () => {
+                this.toggleHintDisplay();
+            });
+        }
+    }
+
+    toggleHintDisplay(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        const hintButton = document.getElementById('hint-button') as HTMLButtonElement;
+        if (!hintDisplay || !hintButton) return;
+
+        if (hintDisplay.classList.contains('hidden')) {
+            this.showHint();
+            hintButton.textContent = 'Hide Hint';
+        } else {
+            this.hideHint();
+            hintButton.textContent = 'Show Hotkey Hint';
+        }
+    }
+
+    showHint(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (!hintDisplay) return;
+
+        const currentAction = this.model.getNextRequiredAction();
+        if (currentAction) {
+            const hotkey = this.formatHotkey(currentAction);
+            hintDisplay.textContent = `Next hotkey: ${hotkey}`;
+            hintDisplay.classList.remove('hidden');
+            hintDisplay.classList.add('show');
+        } else {
+            hintDisplay.textContent = 'No action required at the moment';
+            hintDisplay.classList.remove('hidden');
+            hintDisplay.classList.add('show');
+        }
+    }
+
+    hideHint(): void {
+        const hintDisplay = document.getElementById('hint-display') as HTMLDivElement;
+        if (!hintDisplay) return;
+
+        hintDisplay.classList.remove('show');
+        hintDisplay.classList.add('hidden');
+    }
+
+    formatHotkey(action: Action): string {
+        let hotkey = '';
+        
+        if (action.ctrl) hotkey += 'Ctrl + ';
+        if (action.shift) hotkey += 'Shift + ';
+        if (action.alt) hotkey += 'Alt + ';
+        
+        // Convert the key code to a more readable format
+        const keyMap: { [key: string]: string } = {
+            'KeyA': 'A', 'KeyB': 'B', 'KeyC': 'C', 'KeyD': 'D', 'KeyE': 'E', 'KeyF': 'F',
+            'KeyG': 'G', 'KeyH': 'H', 'KeyI': 'I', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L',
+            'KeyM': 'M', 'KeyN': 'N', 'KeyO': 'O', 'KeyP': 'P', 'KeyQ': 'Q', 'KeyR': 'R',
+            'KeyS': 'S', 'KeyT': 'T', 'KeyU': 'U', 'KeyV': 'V', 'KeyW': 'W', 'KeyX': 'X',
+            'KeyY': 'Y', 'KeyZ': 'Z',
+            'Digit0': '0', 'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4',
+            'Digit5': '5', 'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9',
+            'Semicolon': ';', 'Quote': "'", 'Backslash': '\\', 'Slash': '/', 
+            'Period': '.', 'Comma': ',', 'Minus': '-', 'Equal': '=',
+            'BracketLeft': '[', 'BracketRight': ']', 'Backspace': 'Backspace'
+        };
+        
+        hotkey += keyMap[action.key] || action.key;
+        
+        return hotkey;
     }
 }
 
