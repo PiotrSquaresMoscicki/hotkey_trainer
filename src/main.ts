@@ -13,6 +13,324 @@
 // - Failed Operation - when at least one action is not correct in the sequence the whole sequence
 //      is failed and the user needs to start from the beginning
 
+// Hotkey Import and Management
+interface HotkeyMapping {
+    [command: string]: string;
+}
+
+interface RaceHotkeys {
+    terran: HotkeyMapping;
+    protoss: HotkeyMapping;
+    zerg: HotkeyMapping;
+}
+
+class HotkeyImporter {
+    private raceTemplates: RaceHotkeys = {
+        terran: {},
+        protoss: {},
+        zerg: {}
+    };
+
+    async loadRaceTemplates(): Promise<void> {
+        try {
+            const [terranTemplate, protossTemplate, zergTemplate] = await Promise.all([
+                this.fetchTemplate('terran.SC2Hotkeys.template'),
+                this.fetchTemplate('protoss.SC2Hotkeys.template'),
+                this.fetchTemplate('zerg.SC2Hotkeys.template')
+            ]);
+
+            this.raceTemplates.terran = this.parseTemplate(terranTemplate);
+            this.raceTemplates.protoss = this.parseTemplate(protossTemplate);
+            this.raceTemplates.zerg = this.parseTemplate(zergTemplate);
+        } catch (error) {
+            console.error('Failed to load race templates:', error);
+        }
+    }
+
+    private async fetchTemplate(filename: string): Promise<string> {
+        const response = await fetch(filename);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${filename}: ${response.statusText}`);
+        }
+        return response.text();
+    }
+
+    private parseTemplate(content: string): HotkeyMapping {
+        const mapping: HotkeyMapping = {};
+        const lines = content.split('\n');
+        let inHotkeysSection = false;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            
+            // Skip empty lines and comments
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            
+            // Check for section headers
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                inHotkeysSection = trimmed === '[Hotkeys]';
+                continue;
+            }
+            
+            // Parse hotkey assignments in the [Hotkeys] section
+            if (inHotkeysSection && trimmed.includes('=')) {
+                const [command] = trimmed.split('=', 1);
+                if (command) {
+                    mapping[command] = ''; // Template has empty values
+                }
+            }
+        }
+
+        return mapping;
+    }
+
+    parseUserHotkeys(content: string): HotkeyMapping {
+        const mapping: HotkeyMapping = {};
+        const lines = content.split('\n');
+        let inHotkeysSection = false;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            
+            // Skip empty lines and comments
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            
+            // Check for section headers
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                inHotkeysSection = trimmed === '[Hotkeys]' || trimmed === '[Commands]';
+                continue;
+            }
+            
+            // Parse hotkey assignments
+            if (inHotkeysSection && trimmed.includes('=')) {
+                const [command, hotkey] = trimmed.split('=', 2);
+                if (command && hotkey) {
+                    mapping[command] = hotkey;
+                }
+            }
+        }
+
+        return mapping;
+    }
+
+    extractRaceHotkeys(userHotkeys: HotkeyMapping, race: 'terran' | 'protoss' | 'zerg'): HotkeyMapping {
+        const raceTemplate = this.raceTemplates[race];
+        const extracted: HotkeyMapping = {};
+
+        for (const command in raceTemplate) {
+            if (userHotkeys[command]) {
+                extracted[command] = userHotkeys[command];
+            }
+        }
+
+        return extracted;
+    }
+
+    getAvailableCommands(race: 'terran' | 'protoss' | 'zerg'): string[] {
+        return Object.keys(this.raceTemplates[race]);
+    }
+}
+
+// UI Setup Manager
+class SetupManager {
+    private hotkeyImporter: HotkeyImporter;
+    private userHotkeys: HotkeyMapping = {};
+    private selectedRace: 'terran' | 'protoss' | 'zerg' | null = null;
+
+    constructor() {
+        this.hotkeyImporter = new HotkeyImporter();
+        this.initializeSetup();
+    }
+
+    private async initializeSetup(): Promise<void> {
+        await this.hotkeyImporter.loadRaceTemplates();
+        this.setupEventListeners();
+    }
+
+    private setupEventListeners(): void {
+        const fileInput = document.getElementById('hotkey-file') as HTMLInputElement;
+        const raceSelect = document.getElementById('race-select') as HTMLSelectElement;
+        const startButton = document.getElementById('start-training') as HTMLButtonElement;
+        const fileStatus = document.getElementById('file-status') as HTMLDivElement;
+
+        fileInput.addEventListener('change', async (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (file) {
+                try {
+                    const content = await this.readFile(file);
+                    this.userHotkeys = this.hotkeyImporter.parseUserHotkeys(content);
+                    
+                    const commandCount = Object.keys(this.userHotkeys).length;
+                    fileStatus.textContent = `Loaded ${commandCount} hotkey commands from ${file.name}`;
+                    fileStatus.className = 'file-status success';
+                    
+                    // Enable race selection
+                    raceSelect.disabled = false;
+                    
+                } catch (error) {
+                    fileStatus.textContent = `Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`;
+                    fileStatus.className = 'file-status error';
+                    raceSelect.disabled = true;
+                    startButton.disabled = true;
+                }
+            }
+        });
+
+        raceSelect.addEventListener('change', (event) => {
+            const selected = (event.target as HTMLSelectElement).value as 'terran' | 'protoss' | 'zerg';
+            this.selectedRace = selected || null;
+            
+            if (this.selectedRace && Object.keys(this.userHotkeys).length > 0) {
+                const raceHotkeys = this.hotkeyImporter.extractRaceHotkeys(this.userHotkeys, this.selectedRace);
+                const count = Object.keys(raceHotkeys).length;
+                
+                if (count > 0) {
+                    startButton.disabled = false;
+                    fileStatus.textContent = `Ready to train ${count} ${this.selectedRace} hotkeys`;
+                    fileStatus.className = 'file-status success';
+                } else {
+                    startButton.disabled = true;
+                    fileStatus.textContent = `No ${this.selectedRace} hotkeys found in your file`;
+                    fileStatus.className = 'file-status error';
+                }
+            } else {
+                startButton.disabled = true;
+            }
+        });
+
+        startButton.addEventListener('click', () => {
+            this.startTraining();
+        });
+    }
+
+    private readFile(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsText(file);
+        });
+    }
+
+    private startTraining(): void {
+        if (!this.selectedRace) return;
+
+        const raceHotkeys = this.hotkeyImporter.extractRaceHotkeys(this.userHotkeys, this.selectedRace);
+        
+        // Hide setup section and show training interface
+        const setupSection = document.getElementById('setup-section');
+        const appSection = document.getElementById('app');
+        
+        if (setupSection) setupSection.classList.add('hidden');
+        if (appSection) appSection.classList.remove('hidden');
+
+        // Initialize training with race-specific hotkeys
+        this.initializeTraining(raceHotkeys);
+    }
+
+    private initializeTraining(hotkeys: HotkeyMapping): void {
+        // Convert hotkeys to training operations
+        const operations = this.createTrainingOperations(hotkeys);
+        
+        // Initialize the trainer
+        const view = new View();
+        view.generateOperationsSet(operations, Math.min(50, operations.length));
+    }
+
+    private createTrainingOperations(hotkeys: HotkeyMapping): Operation[] {
+        const operations: Operation[] = [];
+
+        for (const [command, hotkeyStr] of Object.entries(hotkeys)) {
+            if (!hotkeyStr) continue;
+
+            // Parse the hotkey string and convert to Action
+            const action = this.parseHotkeyString(command, hotkeyStr);
+            if (action) {
+                operations.push(new Operation(this.formatCommandName(command), [action]));
+            }
+        }
+
+        return operations;
+    }
+
+    private parseHotkeyString(command: string, hotkeyStr: string): Action | null {
+        try {
+            // Handle multiple hotkeys (take the first one)
+            const firstHotkey = hotkeyStr.split(',')[0].trim();
+            
+            // Parse modifiers
+            const parts = firstHotkey.split('+').map(p => p.trim());
+            let ctrl = false, shift = false, alt = false;
+            let key = '';
+
+            for (const part of parts) {
+                switch (part.toLowerCase()) {
+                    case 'control':
+                    case 'ctrl':
+                        ctrl = true;
+                        break;
+                    case 'shift':
+                        shift = true;
+                        break;
+                    case 'alt':
+                        alt = true;
+                        break;
+                    default:
+                        key = this.convertKeyName(part);
+                }
+            }
+
+            if (!key) return null;
+
+            return new Action(this.formatCommandName(command), key, ctrl, shift, alt);
+        } catch (error) {
+            console.warn(`Failed to parse hotkey for ${command}: ${hotkeyStr}`, error);
+            return null;
+        }
+    }
+
+    private convertKeyName(scKey: string): string {
+        // Convert SC2 key names to web KeyboardEvent codes
+        const keyMap: { [key: string]: string } = {
+            'A': 'KeyA', 'B': 'KeyB', 'C': 'KeyC', 'D': 'KeyD', 'E': 'KeyE', 'F': 'KeyF',
+            'G': 'KeyG', 'H': 'KeyH', 'I': 'KeyI', 'J': 'KeyJ', 'K': 'KeyK', 'L': 'KeyL',
+            'M': 'KeyM', 'N': 'KeyN', 'O': 'KeyO', 'P': 'KeyP', 'Q': 'KeyQ', 'R': 'KeyR',
+            'S': 'KeyS', 'T': 'KeyT', 'U': 'KeyU', 'V': 'KeyV', 'W': 'KeyW', 'X': 'KeyX',
+            'Y': 'KeyY', 'Z': 'KeyZ',
+            '0': 'Digit0', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3', '4': 'Digit4',
+            '5': 'Digit5', '6': 'Digit6', '7': 'Digit7', '8': 'Digit8', '9': 'Digit9',
+            'SemiColon': 'Semicolon', 'Apostrophe': 'Quote', 'Quote': 'Quote',
+            'BackSlash': 'Backslash', 'Slash': 'Slash', 'Period': 'Period',
+            'Comma': 'Comma', 'Minus': 'Minus', 'Equals': 'Equal', 'Equal': 'Equal',
+            'BracketOpen': 'BracketLeft', 'BracketClose': 'BracketRight',
+            'Backspace': 'Backspace', 'Enter': 'Enter', 'Space': 'Space',
+            'Tab': 'Tab', 'Escape': 'Escape'
+        };
+
+        return keyMap[scKey] || scKey;
+    }
+
+    private formatCommandName(command: string): string {
+        // Convert command like "Marine/Barracks" to "Build Marine"
+        if (command.includes('/')) {
+            const [unit, building] = command.split('/');
+            return `${unit} (${building})`;
+        }
+        
+        // Handle special cases
+        const specialNames: { [key: string]: string } = {
+            'TerranBuild': 'Basic Build',
+            'TerranBuildAdvanced': 'Advanced Build',
+            'ProtossBuild': 'Basic Build',
+            'ProtossBuildAdvanced': 'Advanced Build',
+            'ZergBuild': 'Basic Build',
+            'ZergBuildAdvanced': 'Advanced Build'
+        };
+
+        return specialNames[command] || command.replace(/([A-Z])/g, ' $1').trim();
+    }
+}
+
 /*
 SC2Hotkeys file:
 
@@ -1710,7 +2028,8 @@ class View implements ModelObserver {
     }
 }
 
-// actions
+/*
+Legacy actions (now generated dynamically from imported hotkeys):
 
 // hatchery
 const spawnQueen = new Action('Spawn Queen', 'Quote');
@@ -1792,11 +2111,12 @@ const goToCameraLocation1 = new Action('Go To Camera Location 1', 'Digit0');
 const goToCameraLocation2 = new Action('Go To Camera Location 2', 'Digit9');
 const goToCameraLocation3 = new Action('Go To Camera Location 3', 'Digit8');
 const goToCameraLocation4 = new Action('Go To Camera Location 4', 'KeyU');
+*/
 
-// operations
+// operations (legacy - now generated dynamically from imported hotkeys)
 
-// just every action gets its own operation - later we'll add more compilcated operations
-
+// Example hardcoded operations (kept for reference):
+/*
 const allowedOperations = [
     new Operation('Spawn Queen', [spawnQueen]),
     new Operation('Research Burrow', [researchBurrow]),
@@ -1861,6 +2181,9 @@ const allowedOperations = [
     new Operation('Go To Camera Location 3', [goToCameraLocation3]),
     new Operation('Go To Camera Location 4', [goToCameraLocation4]),
 ];
+*/
 
-const view = new View();
-view.generateOperationsSet(allowedOperations, 50);
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    new SetupManager();
+});

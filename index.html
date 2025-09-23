@@ -9,7 +9,31 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <div id="app" class="app-container">
+    <!-- Setup section for hotkey import and race selection -->
+    <div id="setup-section" class="setup-section">
+      <h2>StarCraft 2 Hotkey Trainer Setup</h2>
+      <div class="setup-controls">
+        <div class="file-import">
+          <label for="hotkey-file">Import your SC2Hotkeys file:</label>
+          <input type="file" id="hotkey-file" accept=".SC2Hotkeys" />
+          <div class="file-status" id="file-status">No file selected</div>
+        </div>
+        
+        <div class="race-selection">
+          <label for="race-select">Select race to practice:</label>
+          <select id="race-select" disabled>
+            <option value="">Select a race...</option>
+            <option value="terran">Terran</option>
+            <option value="protoss">Protoss</option>
+            <option value="zerg">Zerg</option>
+          </select>
+        </div>
+        
+        <button id="start-training" class="start-button" disabled>Start Training</button>
+      </div>
+    </div>
+
+    <div id="app" class="app-container hidden">
       <!-- Operations list section -->
       <div id="operations-section" class="operations-section">
         <h3>Operations to perform:</h3>
